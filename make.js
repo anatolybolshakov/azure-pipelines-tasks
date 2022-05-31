@@ -279,10 +279,10 @@ target.build = function() {
                 run(`npm install --save-exact ${installPaths.join(' ')}`);
             }
         }
-
+        let nodeHandlerSpecificPaths;
         // build Node task
         if (shouldBuildNode) {
-            buildNodeTask(taskPath, outDir);
+            nodeHandlerSpecificPaths = buildNodeTask(taskPath, outDir);
         }
 
         // remove the hashes for the common packages, they change every build
@@ -305,7 +305,7 @@ target.build = function() {
         // copy default resources and any additional resources defined in the task's make.json
         console.log();
         console.log('> copying task resources');
-        copyTaskResources(taskMake, taskPath, outDir);
+        copyTaskResources(taskMake, taskPath, outDir, nodeHandlerSpecificPaths);
     });
 
     banner('Build successful', true);

@@ -159,6 +159,8 @@ var buildNodeTask = function (taskPath, outDir) {
     cd(taskPath);
     var packageJsonPath = rp('package.json');
     var overrideTscPath;
+    let nodeHandlerSpecificPaths = [];
+
     if (test('-f', packageJsonPath)) {
         // verify no dev dependencies
         // we allow a TS dev-dependency to indicate a task should use a different TS version
@@ -181,7 +183,11 @@ var buildNodeTask = function (taskPath, outDir) {
         nodeHandlerFolderNames.forEach(handlerFolderName => {
             packageJsonPathNodeSpecific = rp(path.join(handlerFolderName, 'package.json'));
             const currentTaskSpecificNodePath = rp(handlerFolderName);
+            const outDirNodeSpecific = path.join(outDir, handlerFolderName);
+            nodeHandlerSpecificPaths.push(outDirNodeSpecific);
 
+            cd(handlerFolderName);
+            run('npm install');
             // verify no dev dependencies
             // we allow a TS dev-dependency to indicate a task should use a different TS version
             var packageJson = JSON.parse(fs.readFileSync(packageJsonPathNodeSpecific).toString());
@@ -200,12 +206,14 @@ var buildNodeTask = function (taskPath, outDir) {
             // Use the tsc version supplied by the task if it is available, otherwise use the global default.
             if (overrideTscPath) {
                 var tscExec = path.join(overrideTscPath, "bin", "tsc");
-                run("node " + tscExec + ' --outDir "' + outDir + '" --rootDir "' + currentTaskSpecificNodePath + '"');
+                run("node " + tscExec + ' --outDir "' + outDirNodeSpecific + '" --rootDir "' + currentTaskSpecificNodePath + '"');
                 // Don't include typescript in node_modules
                 rm("-rf", overrideTscPath);
             } else {
-                run('tsc --outDir "' + outDir + '" --rootDir "' + currentTaskSpecificNodePath + '"');
+                run('tsc --outDir "' + outDirNodeSpecific + '" --rootDir "' + currentTaskSpecificNodePath + '"');
             }
+
+            cd('..');
         });
     }
 
@@ -216,16 +224,22 @@ var buildNodeTask = function (taskPath, outDir) {
     }
 
     cd(originalDir);
+
+    return nodeHandlerSpecificPaths;
 }
 exports.buildNodeTask = buildNodeTask;
 
-var copyTaskResources = function (taskMake, srcPath, destPath) {
+var copyTaskResources = function (taskMake, srcPath, destPath, additionalTaskResourcePaths) {
     assert(taskMake, 'taskMake');
     assert(srcPath, 'srcPath');
     assert(destPath, 'destPath');
 
     // copy the globally defined set of default task resources
     var toCopy = makeOptions['taskResources'];
+    if (additionalTaskResourcePaths) {
+        toCopy.concat(additionalTaskResourcePaths);
+    }
+
     toCopy.forEach(function (item) {
         matchCopy(item, srcPath, destPath, { noRecurse: true, matchBase: true });
     });
