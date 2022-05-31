@@ -306,13 +306,6 @@ target.build = function() {
         console.log();
         console.log('> copying task resources');
         copyTaskResources(taskMake, taskPath, outDir);
-
-        // Copy node_modules of node specific packages
-        nodeHandlerFolderNames.forEach(nodeHandlerFolderName => {
-            cp('-Rf', path.join(taskPath, nodeHandlerFolderName), path.join(outDir, nodeHandlerFolderName));
-            cp('-Rf', path.join(taskPath, 'package.json'), path.join(outDir, 'package.json'));
-            cp('-Rf', path.join(taskPath, 'package-lock.json'), path.join(outDir, 'package-lock.json'));
-        });
     });
 
     banner('Build successful', true);

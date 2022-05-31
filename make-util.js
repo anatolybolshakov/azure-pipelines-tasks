@@ -151,8 +151,8 @@ var getCommonPackInfo = function (modOutDir) {
     };
 }
 exports.getCommonPackInfo = getCommonPackInfo;
-
-const nodeHandlerFolderNames = ['node6', 'node10', 'node18', 'mainLogic'];
+// Please note that mainLogic should be first - since it should be built as first step to be imported futher by node specific packages
+const handlerFolderNames = ['mainLogic', 'node6', 'node10', 'node18'];
 
 var buildNodeTask = function (taskPath, outDir) {
     var originalDir = pwd().toString();
@@ -180,14 +180,15 @@ var buildNodeTask = function (taskPath, outDir) {
         run('npm install');
     } else {
         let packageJsonPathNodeSpecific;
-        nodeHandlerFolderNames.forEach(handlerFolderName => {
+        handlerFolderNames.forEach(handlerFolderName => {
             packageJsonPathNodeSpecific = rp(path.join(handlerFolderName, 'package.json'));
             const currentTaskSpecificNodePath = rp(handlerFolderName);
             const outDirNodeSpecific = path.join(outDir, handlerFolderName);
-            nodeHandlerSpecificPaths.push(path.join(handlerFolderName, "node_modules"));
+            nodeHandlerSpecificPaths.push(handlerFolderName);
 
             cd(handlerFolderName);
             run('npm install');
+
             // verify no dev dependencies
             // we allow a TS dev-dependency to indicate a task should use a different TS version
             var packageJson = JSON.parse(fs.readFileSync(packageJsonPathNodeSpecific).toString());
@@ -212,6 +213,11 @@ var buildNodeTask = function (taskPath, outDir) {
             } else {
                 run('tsc --outDir "' + outDirNodeSpecific + '" --rootDir "' + currentTaskSpecificNodePath + '"');
             }
+
+            // Copying node_modules, package/package-lock
+            cp('-Rf', path.join(taskPath, handlerFolderName, 'node_modules'), path.join(outDir, handlerFolderName, 'node_modules'));
+            cp('-Rf', path.join(taskPath, handlerFolderName, path.dirname(handlerFolderName), 'package.json'), path.join(outDir, handlerFolderName, 'package.json'));
+            cp('-Rf', path.join(taskPath, handlerFolderName, 'package-lock.json'), path.join(outDir, handlerFolderName, 'package-lock.json'));            
 
             cd('..');
         });

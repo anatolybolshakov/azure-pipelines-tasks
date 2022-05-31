@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "multiplehandlerstask": "file:../mainLogic",
+    "multiplehandlerstask": "file:../../../_build/Tasks/PowerShellV2/mainLogic",
     "azure-pipelines-task-lib": "2.11.3",
     "@types/node": "^6.0.101"
   }
