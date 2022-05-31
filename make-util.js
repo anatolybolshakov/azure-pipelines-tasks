@@ -184,7 +184,7 @@ var buildNodeTask = function (taskPath, outDir) {
             packageJsonPathNodeSpecific = rp(path.join(handlerFolderName, 'package.json'));
             const currentTaskSpecificNodePath = rp(handlerFolderName);
             const outDirNodeSpecific = path.join(outDir, handlerFolderName);
-            nodeHandlerSpecificPaths.push(outDirNodeSpecific);
+            nodeHandlerSpecificPaths.push(path.join(handlerFolderName, "node_modules"));
 
             cd(handlerFolderName);
             run('npm install');
@@ -229,16 +229,13 @@ var buildNodeTask = function (taskPath, outDir) {
 }
 exports.buildNodeTask = buildNodeTask;
 
-var copyTaskResources = function (taskMake, srcPath, destPath, additionalTaskResourcePaths) {
+var copyTaskResources = function (taskMake, srcPath, destPath) {
     assert(taskMake, 'taskMake');
     assert(srcPath, 'srcPath');
     assert(destPath, 'destPath');
 
     // copy the globally defined set of default task resources
     var toCopy = makeOptions['taskResources'];
-    if (additionalTaskResourcePaths) {
-        toCopy.concat(additionalTaskResourcePaths);
-    }
 
     toCopy.forEach(function (item) {
         matchCopy(item, srcPath, destPath, { noRecurse: true, matchBase: true });
