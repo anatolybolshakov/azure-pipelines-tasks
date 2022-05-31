@@ -152,6 +152,8 @@ var getCommonPackInfo = function (modOutDir) {
 }
 exports.getCommonPackInfo = getCommonPackInfo;
 
+const nodeHandlerFolderNames = ['node6', 'node10', 'node18'];
+
 var buildNodeTask = function (taskPath, outDir) {
     var originalDir = pwd().toString();
     cd(taskPath);
@@ -174,6 +176,26 @@ var buildNodeTask = function (taskPath, outDir) {
         }
 
         run('npm install');
+    } else {
+        let packageJsonPathNodeSpecific;
+        nodeHandlers.forEach(handlerFolderName => {
+            packageJsonPathNodeSpecific = rp(path.join(handlerFolderName, 'package.json'));
+        });
+
+        // verify no dev dependencies
+        // we allow a TS dev-dependency to indicate a task should use a different TS version
+        var packageJson = JSON.parse(fs.readFileSync(packageJsonPathNodeSpecific).toString());
+        var devDeps = packageJson.devDependencies ? Object.keys(packageJson.devDependencies).length : 0;
+        if (devDeps == 1 && packageJson.devDependencies["typescript"]) {
+            var version = packageJson.devDependencies["typescript"];
+            if (!allowedTypescriptVersions.includes(version)) {
+                fail(`The package.json specifies a different TS version (${version}) that the allowed versions: ${allowedTypescriptVersions}. Offending package.json: ${packageJsonPath}`);
+            }
+            overrideTscPath = path.join(taskPath, "node_modules", "typescript");
+            console.log(`Detected Typescript version: ${version}`);
+        } else if (devDeps >= 1) {
+            fail('The package.json should not contain dev dependencies other than typescript. Move the dev dependencies into a package.json file under the Tests sub-folder. Offending package.json: ' + packageJsonPath);
+        }
     }
 
     if (test('-f', rp(path.join('Tests', 'package.json')))) {
