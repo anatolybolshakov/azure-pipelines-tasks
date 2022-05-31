@@ -152,7 +152,7 @@ var getCommonPackInfo = function (modOutDir) {
 }
 exports.getCommonPackInfo = getCommonPackInfo;
 
-const nodeHandlerFolderNames = ['node6', 'node10', 'node18'];
+const nodeHandlerFolderNames = ['node6', 'node10', 'node18', 'mainLogic'];
 
 var buildNodeTask = function (taskPath, outDir) {
     var originalDir = pwd().toString();
