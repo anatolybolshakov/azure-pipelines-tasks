@@ -1,3 +1,11 @@
 {
-  "loc.messages.SomeTestMessage": "Some test localized message"
+  "loc.friendlyName": "Copy Task Several Node handlers",
+  "loc.helpMarkDown": "",
+  "loc.description": "Simple task which copies files from one dir to another - with support of several nodejs handlers (node6, node10, node18)",
+  "loc.instanceNameFormat": "PowerShell Script",
+  "loc.releaseNotes": "Script task consistency. Added support for macOS and Linux.",
+  "loc.input.label.SourceFolder": "Source Folder",
+  "loc.input.help.SourceFolder": "The source folder that the copy will be run from.",
+  "loc.input.label.DestFolder": "Destination Folder",
+  "loc.input.help.DestFolder": "The destination folder that will be used as target directory."
 }

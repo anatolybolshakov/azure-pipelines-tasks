@@ -178,40 +178,41 @@ var buildNodeTask = function (taskPath, outDir) {
         run('npm install');
     } else {
         let packageJsonPathNodeSpecific;
-        nodeHandlers.forEach(handlerFolderName => {
+        nodeHandlerFolderNames.forEach(handlerFolderName => {
             packageJsonPathNodeSpecific = rp(path.join(handlerFolderName, 'package.json'));
-        });
+            const currentTaskSpecificNodePath = rp(handlerFolderName);
 
-        // verify no dev dependencies
-        // we allow a TS dev-dependency to indicate a task should use a different TS version
-        var packageJson = JSON.parse(fs.readFileSync(packageJsonPathNodeSpecific).toString());
-        var devDeps = packageJson.devDependencies ? Object.keys(packageJson.devDependencies).length : 0;
-        if (devDeps == 1 && packageJson.devDependencies["typescript"]) {
-            var version = packageJson.devDependencies["typescript"];
-            if (!allowedTypescriptVersions.includes(version)) {
-                fail(`The package.json specifies a different TS version (${version}) that the allowed versions: ${allowedTypescriptVersions}. Offending package.json: ${packageJsonPath}`);
+            // verify no dev dependencies
+            // we allow a TS dev-dependency to indicate a task should use a different TS version
+            var packageJson = JSON.parse(fs.readFileSync(packageJsonPathNodeSpecific).toString());
+            var devDeps = packageJson.devDependencies ? Object.keys(packageJson.devDependencies).length : 0;
+            if (devDeps == 1 && packageJson.devDependencies["typescript"]) {
+                var version = packageJson.devDependencies["typescript"];
+                if (!allowedTypescriptVersions.includes(version)) {
+                    fail(`The package.json specifies a different TS version (${version}) that the allowed versions: ${allowedTypescriptVersions}. Offending package.json: ${packageJsonPath}`);
+                }
+                overrideTscPath = path.join(currentTaskSpecificNodePath, "node_modules", "typescript");
+                console.log(`Detected Typescript version: ${version}`);
+            } else if (devDeps >= 1) {
+                fail('The package.json should not contain dev dependencies other than typescript. Move the dev dependencies into a package.json file under the Tests sub-folder. Offending package.json: ' + packageJsonPath);
             }
-            overrideTscPath = path.join(taskPath, "node_modules", "typescript");
-            console.log(`Detected Typescript version: ${version}`);
-        } else if (devDeps >= 1) {
-            fail('The package.json should not contain dev dependencies other than typescript. Move the dev dependencies into a package.json file under the Tests sub-folder. Offending package.json: ' + packageJsonPath);
-        }
+
+            // Use the tsc version supplied by the task if it is available, otherwise use the global default.
+            if (overrideTscPath) {
+                var tscExec = path.join(overrideTscPath, "bin", "tsc");
+                run("node " + tscExec + ' --outDir "' + outDir + '" --rootDir "' + currentTaskSpecificNodePath + '"');
+                // Don't include typescript in node_modules
+                rm("-rf", overrideTscPath);
+            } else {
+                run('tsc --outDir "' + outDir + '" --rootDir "' + currentTaskSpecificNodePath + '"');
+            }
+        });
     }
 
     if (test('-f', rp(path.join('Tests', 'package.json')))) {
         cd(rp('Tests'));
         run('npm install');
         cd(taskPath);
-    }
-
-    // Use the tsc version supplied by the task if it is available, otherwise use the global default.
-    if (overrideTscPath) {
-        var tscExec = path.join(overrideTscPath, "bin", "tsc");
-        run("node " + tscExec + ' --outDir "' + outDir + '" --rootDir "' + taskPath + '"');
-        // Don't include typescript in node_modules
-        rm("-rf", overrideTscPath);
-    } else {
-        run('tsc --outDir "' + outDir + '" --rootDir "' + taskPath + '"');
     }
 
     cd(originalDir);
